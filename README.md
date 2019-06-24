@@ -1,6 +1,8 @@
 # ProjectBoost
 A game about a damaged rocket trying to escape from an unknown planet. Made in Unity.
 
+![A skilled pilot avoiding the obstacles!](Screenshots/Gameplay001.png)
+
 ## Main game mechanic
 At each level, the rocket starts on a blue launch pad and needs to reach a green landing pad. Try to avoid the obstacles in the middle so that the rocket does not explode. You will find that gravity has an important effect in the gameplay. You will need to master the controls to become a skilled rocket pilot.
 
