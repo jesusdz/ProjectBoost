@@ -2,14 +2,26 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Rocket : MonoBehaviour
 {
     [SerializeField] float mainThrust = 20.0f;
     [SerializeField] float rotationThrust = 90.0f;
+    [SerializeField] AudioClip thrustClip;
+    [SerializeField] AudioClip deathClip;
+    [SerializeField] AudioClip winclip;
+    [SerializeField] ParticleSystem thrustParticles;
+    [SerializeField] ParticleSystem deathParticles;
+    [SerializeField] ParticleSystem winParticles;
 
     Rigidbody rigidBody;
     AudioSource audioSource;
+
+    enum State {  Alive, Dying, Transcending };
+    State state = State.Alive;
+
+    bool godModeIsEnabled = false;
 
     // Start is called before the first frame update
     void Start()
@@ -21,31 +33,60 @@ public class Rocket : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        ProcessInput();
+        if (state == State.Alive)
+        {
+            Thrust();
+            Rotate();
+        }
+        
+        Debug();
     }
 
     private void OnCollisionEnter(Collision collision)
     {
+        if (state != State.Alive)
+        {
+            return;
+        }
+
+        if (collision.gameObject.tag == "Obstacle" && godModeIsEnabled)
+        {
+            return;
+        }
+
         switch(collision.gameObject.tag)
         {
-            case "Friendly":
-                print("Friendly");
+            case "Obstacle":
+                state = State.Dying;
+                audioSource.Stop();
+                audioSource.PlayOneShot(deathClip);
+                deathParticles.Play();
+                Invoke("RestartLevel", 1f);
                 break;
 
-            case "Fuel":
-                print("Fuel");
+            case "Finish":
+                state = State.Transcending;
+                audioSource.Stop();
+                audioSource.PlayOneShot(winclip);
+                winParticles.Play();
+                Invoke("StartNextLevel", 1f);
                 break;
 
             default:
-                print("Default");
                 break;
         }
     }
 
-    private void ProcessInput()
+    private void RestartLevel()
     {
-        Thrust();
-        Rotate();
+        int currentLevel = SceneManager.GetActiveScene().buildIndex;
+        SceneManager.LoadScene(currentLevel);
+    }
+
+    private void StartNextLevel()
+    {
+        int nextLevel = SceneManager.GetActiveScene().buildIndex + 1;
+        SceneManager.LoadScene(nextLevel);
     }
 
     private void Thrust()
@@ -56,12 +97,14 @@ public class Rocket : MonoBehaviour
 
             if (!audioSource.isPlaying)
             {
-                audioSource.Play();
+                audioSource.PlayOneShot(thrustClip);
+                thrustParticles.Play();
             }
         }
         else
         {
             audioSource.Stop();
+            thrustParticles.Stop();
         }
     }
 
@@ -81,5 +124,17 @@ public class Rocket : MonoBehaviour
         }
 
         rigidBody.freezeRotation = false; // resume physics control of rotation
+    }
+
+    private void Debug()
+    {
+        if (Input.GetKeyDown(KeyCode.N)) // next level
+        {
+            StartNextLevel();
+        }
+        if (Input.GetKeyDown(KeyCode.G)) // god mode
+        {
+            godModeIsEnabled = !godModeIsEnabled;
+        }
     }
 }
